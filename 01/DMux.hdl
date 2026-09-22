@@ -14,5 +14,12 @@ CHIP DMux {
     OUT a, b;
 
     PARTS:
-    // Put your code here:
+    // 第一步：取得 sel 的反轉訊號 (notSel)
+    Not(in=sel, out=notSel);
+    
+    // 第二步：處理輸出 a (in AND NOT sel)
+    And(a=in, b=notSel, out=a);
+    
+    // 第三步：處理輸出 b (in AND sel)
+    And(a=in, b=sel, out=b);
 }

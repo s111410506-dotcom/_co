@@ -16,5 +16,13 @@ CHIP DMux4Way {
     OUT a, b, c, d;
 
     PARTS:
-    // Put your code here:
+    // 第一層：根據 sel[1] 將訊號 in 分流給 AB 組 (inAB) 或是 CD 組 (inCD)
+    // 當 sel[1] == 0 時，訊號傳給 inAB；當 sel[1] == 1 時，訊號傳給 inCD
+    DMux(in=in, sel=sel[1], a=inAB, b=inCD);
+    
+    // 第二層 (AB組)：根據 sel[0] 決定將 inAB 的訊號傳給 a 還是 b
+    DMux(in=inAB, sel=sel[0], a=a, b=b);
+    
+    // 第二層 (CD組)：根據 sel[0] 決定將 inCD 的訊號傳給 c 還是 d
+    DMux(in=inCD, sel=sel[0], a=c, b=d);
 }

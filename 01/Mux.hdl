@@ -14,5 +14,17 @@ CHIP Mux {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    // 第一步：取得 sel 的反轉訊號 (notSel)
+    Not(in=sel, out=notSel);
+    
+    // 第二步：處理 (a AND NOT sel) 的情況
+    // 當 sel = 0 時，notSel = 1，此時若 a = 1，則輸出 1
+    And(a=a, b=notSel, out=aAndNotSel);
+    
+    // 第三步：處理 (b AND sel) 的情況
+    // 當 sel = 1 時，此時若 b = 1，則輸出 1
+    And(a=b, b=sel, out=bAndSel);
+    
+    // 第四步：將兩種情況用 Or 連接起來
+    Or(a=aAndNotSel, b=bAndSel, out=out);
 }

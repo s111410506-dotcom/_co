@@ -13,5 +13,12 @@ CHIP FullAdder {
         carry;   // Left bit of a + b + c
 
     PARTS:
-    // Put you code here:
+    // 步驟一：先將 a 和 b 透過半加器相加
+    HalfAdder(a=a, b=b, sum=abSum, carry=abCarry);
+    
+    // 步驟二：將 (a+b) 的總和與 c 透過第二個半加器相加，得到最終的 sum
+    HalfAdder(a=abSum, b=c, sum=sum, carry=abcCarry);
+    
+    // 步驟三：只要兩次加法中有任何一次產生進位，最終的 carry 就是 1
+    Or(a=abCarry, b=abcCarry, out=carry);
 }

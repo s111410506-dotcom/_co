@@ -16,5 +16,13 @@ CHIP DMux8Way {
     OUT a, b, c, d, e, f, g, h;
 
     PARTS:
-    // Put your code here:
+    // 第一層（大分流）：利用最高位元 sel[2] 將訊號切分為「前半部」或「後半部」
+    // 當 sel[2] == 0，訊號導向 inABCD；當 sel[2] == 1，訊號導向 inEFGH
+    DMux(in=in, sel=sel[2], a=inABCD, b=inEFGH);
+    
+    // 第二層（小分流 - 前半部）：如果訊號來到 inABCD，利用 sel[0..1] 決定給 a, b, c, d 哪一個
+    DMux4Way(in=inABCD, sel=sel[0..1], a=a, b=b, c=c, d=d);
+    
+    // 第二層（小分流 - 後半部）：如果訊號來到 inEFGH，利用 sel[0..1] 決定給 e, f, g, h 哪一個
+    DMux4Way(in=inEFGH, sel=sel[0..1], a=e, b=f, c=g, d=h);
 }

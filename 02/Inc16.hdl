@@ -13,5 +13,8 @@ CHIP Inc16 {
     OUT out[16];
 
     PARTS:
-   // Put you code here:
+    // 呼叫上一題完成的 16 位元加法器
+    // 將 b 的第 0 位元設為 true (1)，其餘 1 到 15 位元設為 false (0)
+    // 這樣就等同於將 in 加上 0000000000000001
+    Add16(a=in, b[0]=true, b[1..15]=false, out=out);
 }

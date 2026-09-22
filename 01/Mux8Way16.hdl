@@ -18,5 +18,12 @@ CHIP Mux8Way16 {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 第一層：將 8 個輸入分為上下兩組（各 4 個），使用 sel[0..1] 進行 4 選 1
+    // 注意語法：sel=sel[0..1] 代表取 sel 匯流排的第 0 到第 1 個位元
+    Mux4Way16(a=a, b=b, c=c, d=d, sel=sel[0..1], out=muxABCD);
+    Mux4Way16(a=e, b=f, c=g, d=h, sel=sel[0..1], out=muxEFGH);
+    
+    // 第二層：使用 sel 的最高位元 sel[2] 來決定最終輸出 ABCD 組還是 EFGH 組
+    // 當 sel[2] == 0，選擇 muxABCD；當 sel[2] == 1，選擇 muxEFGH
+    Mux16(a=muxABCD, b=muxEFGH, sel=sel[2], out=out);
 }
