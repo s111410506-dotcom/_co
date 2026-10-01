@@ -15,5 +15,19 @@ CHIP RAM8 {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 步驟一：使用 DMux8Way 將 load 訊號根據 address 分配給指定的暫存器
+    DMux8Way(in=load, sel=address, a=load0, b=load1, c=load2, d=load3, e=load4, f=load5, g=load6, h=load7);
+
+    // 步驟二：實作 8 個獨立的 16 位元暫存器，統一接收 in，但各自依據專屬的 load 訊號決定是否寫入
+    Register(in=in, load=load0, out=reg0);
+    Register(in=in, load=load1, out=reg1);
+    Register(in=in, load=load2, out=reg2);
+    Register(in=in, load=load3, out=reg3);
+    Register(in=in, load=load4, out=reg4);
+    Register(in=in, load=load5, out=reg5);
+    Register(in=in, load=load6, out=reg6);
+    Register(in=in, load=load7, out=reg7);
+
+    // 步驟三：使用 Mux8Way16 收集 8 個暫存器的輸出，根據 address 選擇指定的一個作為最終 out
+    Mux8Way16(a=reg0, b=reg1, c=reg2, d=reg3, e=reg4, f=reg5, g=reg6, h=reg7, sel=address, out=out);
 }

@@ -14,5 +14,12 @@ CHIP Bit {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    // 使用 Mux 來決定要「讀取新輸入」還是「保持舊資料」
+    // 當 load == 0，選擇上一週期的輸出 (outFb) 作為新輸入，維持狀態不變
+    // 當 load == 1，選擇外部傳來的新資料 (in)
+    Mux(a=outFb, b=in, sel=load, out=muxOut);
+    
+    // 將 Mux 決定的結果送入 DFF 進行時脈同步 (延遲一個週期)
+    // 技巧：將 DFF 的結果同時輸出給 out 腳位，以及拉回內部線路 outFb 給 Mux 讀取
+    DFF(in=muxOut, out=out, out=outFb);
 }
