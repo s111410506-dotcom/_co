@@ -15,5 +15,18 @@ CHIP RAM16K {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 步驟一：使用高 2 位元 address[12..13] 決定 4 個大區塊
+    // 透過 DMux4Way 將 load 訊號導向 4 顆 RAM4K 模組中的目標區塊
+    DMux4Way(in=load, sel=address[12..13], a=load0, b=load1, c=load2, d=load3);
+
+    // 步驟二：排列 4 顆 RAM4K 模組
+    // 將低 12 位元 address[0..11] 餵給所有的 RAM4K，讓它們在內部 4096 個空間中精確尋址
+    RAM4K(in=in, load=load0, address=address[0..11], out=ram0);
+    RAM4K(in=in, load=load1, address=address[0..11], out=ram1);
+    RAM4K(in=in, load=load2, address=address[0..11], out=ram2);
+    RAM4K(in=in, load=load3, address=address[0..11], out=ram3);
+
+    // 步驟三：再次使用高 2 位元 address[12..13]
+    // 透過 Mux4Way16 從 4 顆 RAM4K 的輸出中，選出被指定的那一組數值作為最終輸出
+    Mux4Way16(a=ram0, b=ram1, c=ram2, d=ram3, sel=address[12..13], out=out);
 }

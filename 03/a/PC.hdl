@@ -16,5 +16,23 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 取得當前狀態並預先計算遞增結果
+    Inc16(in=outFb, out=incOut);
+    
+    // 優先順序 3 (最低): inc (遞增)
+    // 如果 inc=1，選擇遞增結果；否則保持原狀態 (outFb)
+    Mux16(a=outFb, b=incOut, sel=inc, out=step1);
+    
+    // 優先順序 2: load (載入新值)
+    // 如果 load=1，覆蓋掉前面的決定，強制選擇外部輸入 (in)
+    Mux16(a=step1, b=in, sel=load, out=step2);
+    
+    // 優先順序 1 (最高): reset (歸零)
+    // 如果 reset=1，覆蓋掉前面所有決定，強制選擇 0 (false)
+    Mux16(a=step2, b=false, sel=reset, out=step3);
+    
+    // 將最終決定好的數值送入 Register 儲存
+    // 因為前面 Mux 鏈的第一步已經涵蓋了「不變 (else out[t+1] = out[t])」的邏輯
+    // 所以我們直接讓 Register 每個週期都無條件讀入 (load=true) Mux 鏈的最終結果即可
+    Register(in=step3, load=true, out=out, out=outFb);
 }

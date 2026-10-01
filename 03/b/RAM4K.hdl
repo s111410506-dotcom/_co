@@ -15,5 +15,22 @@ CHIP RAM4K {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 步驟一：使用高 3 位元 address[9..11] 決定大區塊
+    // 透過 DMux8Way 將 load 訊號導向 8 顆 RAM512 模組中的目標區塊
+    DMux8Way(in=load, sel=address[9..11], a=load0, b=load1, c=load2, d=load3, e=load4, f=load5, g=load6, h=load7);
+
+    // 步驟二：排列 8 顆 RAM512 模組
+    // 將低 9 位元 address[0..8] 餵給所有的 RAM512，讓它們在內部 512 個空間中精確尋址
+    RAM512(in=in, load=load0, address=address[0..8], out=ram0);
+    RAM512(in=in, load=load1, address=address[0..8], out=ram1);
+    RAM512(in=in, load=load2, address=address[0..8], out=ram2);
+    RAM512(in=in, load=load3, address=address[0..8], out=ram3);
+    RAM512(in=in, load=load4, address=address[0..8], out=ram4);
+    RAM512(in=in, load=load5, address=address[0..8], out=ram5);
+    RAM512(in=in, load=load6, address=address[0..8], out=ram6);
+    RAM512(in=in, load=load7, address=address[0..8], out=ram7);
+
+    // 步驟三：再次使用高 3 位元 address[9..11]
+    // 透過 Mux8Way16 從 8 顆 RAM512 的輸出中，選出被指定的那一組數值作為最終輸出
+    Mux8Way16(a=ram0, b=ram1, c=ram2, d=ram3, e=ram4, f=ram5, g=ram6, h=ram7, sel=address[9..11], out=out);
 }
