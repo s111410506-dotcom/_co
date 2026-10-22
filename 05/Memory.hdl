@@ -27,5 +27,28 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 1. 寫入控制 (DMux4Way)
+    // 利用高 2 位元 address[13..14] 決定 load 訊號要送往哪個硬體
+    // 00 -> RAM16K (下半部)
+    // 01 -> RAM16K (上半部)
+    // 10 -> Screen
+    // 11 -> Keyboard
+    DMux4Way(in=load, sel=address[13..14], a=loadRAM1, b=loadRAM2, c=loadScreen, d=loadKbd);
+    
+    // RAM16K 橫跨了 00 與 01 兩個區段，所以只要其中一個被選中，就啟動 RAM 的 load
+    Or(a=loadRAM1, b=loadRAM2, out=loadRAM);
+
+    // 2. 記憶體元件例現
+    // RAM16K 使用 14 根位址線 (address[0..13])
+    RAM16K(in=in, load=loadRAM, address=address[0..13], out=outRAM);
+    
+    // Screen (8K) 使用 13 根位址線 (address[0..12])
+    Screen(in=in, load=loadScreen, address=address[0..12], out=outScreen);
+    
+    // Keyboard 不需要位址線與 in 腳位，它只能被讀取
+    Keyboard(out=outKbd);
+
+    // 3. 讀取控制 (Mux4Way16)
+    // 同樣利用高 2 位元，從這三個硬體的輸出中選擇正確的數值向外傳遞
+    Mux4Way16(a=outRAM, b=outRAM, c=outScreen, d=outKbd, sel=address[13..14], out=out);
 }

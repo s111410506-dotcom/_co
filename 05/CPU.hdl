@@ -3,28 +3,6 @@
 // by Nisan and Schocken, MIT Press.
 // File name: projects/05/CPU.hdl
 
-/**
- * The Hack CPU (Central Processing unit), consisting of an ALU,
- * two registers named A and D, and a program counter named PC.
- * The CPU is designed to fetch and execute instructions written in 
- * the Hack machine language. In particular, functions as follows:
- * Executes the inputted instruction according to the Hack machine 
- * language specification. The D and A in the language specification
- * refer to CPU-resident registers, while M refers to the external
- * memory location addressed by A, i.e. to Memory[A]. The inM input 
- * holds the value of this location. If the current instruction needs 
- * to write a value to M, the value is placed in outM, the address 
- * of the target location is placed in the addressM output, and the 
- * writeM control bit is asserted. (When writeM==0, any value may 
- * appear in outM). The outM and writeM outputs are combinational: 
- * they are affected instantaneously by the execution of the current 
- * instruction. The addressM and pc outputs are clocked: although they 
- * are affected by the execution of the current instruction, they commit 
- * to their new values only in the next time step. If reset==1 then the 
- * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
- * than to the address resulting from executing the current instruction. 
- */
-
 CHIP CPU {
 
     IN  inM[16],         // M value input  (M = contents of RAM[A])
@@ -39,5 +17,68 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // 解碼指令類型：最高位元 instruction[15] 為 0 代表 A 指令，為 1 代表 C 指令
+    Not(in=instruction[15], out=isA);
+
+    // -----------------------------------
+    // 1. A-Register (位址暫存器) 控制邏輯
+    // -----------------------------------
+    // 根據是否為 C 指令，決定 A 暫存器要讀取外部的新指令，還是 ALU 的運算結果
+    Mux16(a=instruction, b=aluOut, sel=instruction[15], out=inA);
+    
+    // 若為 C 指令且 dest 欄位包含 A (instruction[5]=1)，則授權寫入 A
+    And(a=instruction[15], b=instruction[5], out=loadAFromALU);
+    // 若為 A 指令，也必須無條件寫入 A
+    Or(a=isA, b=loadAFromALU, out=loadA);
+    
+    // 將最後的 15 個位元輸出給 addressM 供外部記憶體定址使用
+    ARegister(in=inA, load=loadA, out=outA, out[0..14]=addressM);
+
+    // -----------------------------------
+    // 2. ALU 輸入選擇與 D-Register
+    // -----------------------------------
+    // 根據 a-bit (instruction[12]) 決定 ALU 的第二個輸入是 A 暫存器還是外部 M 記憶體
+    Mux16(a=outA, b=inM, sel=instruction[12], out=outAM);
+
+    // 若為 C 指令且 dest 欄位包含 D (instruction[4]=1)，則寫入 D 暫存器
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    DRegister(in=aluOut, load=loadD, out=outD);
+
+    // -----------------------------------
+    // 3. ALU 核心運算
+    // -----------------------------------
+    // 將 C 指令的 6 個 comp 控制位元 (instruction[6..11]) 直接映射給 ALU
+    ALU(x=outD, y=outAM, 
+        zx=instruction[11], nx=instruction[10], 
+        zy=instruction[9], ny=instruction[8], 
+        f=instruction[7], no=instruction[6], 
+        out=aluOut, out=outM, zr=zr, ng=ng);
+
+    // -----------------------------------
+    // 4. Memory 寫入控制 (writeM)
+    // -----------------------------------
+    // 若為 C 指令且 dest 欄位包含 M (instruction[3]=1)
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // -----------------------------------
+    // 5. Program Counter (PC) 跳躍控制
+    // -----------------------------------
+    // 根據 ALU 的狀態標籤 (zr, ng) 推導出結果是否為正數 (> 0)
+    Or(a=zr, b=ng, out=zrOrNg);
+    Not(in=zrOrNg, out=pos);
+
+    // 將狀態與指令的 jump 欄位 (instruction[0..2]) 進行配對檢查
+    And(a=instruction[2], b=ng, out=jlt);   // JLT: 檢查 < 0
+    And(a=instruction[1], b=zr, out=jeq);   // JEQ: 檢查 == 0
+    And(a=instruction[0], b=pos, out=jgt);  // JGT: 檢查 > 0
+
+    // 只要滿足任何一個跳躍條件，即準備觸發跳躍
+    Or(a=jlt, b=jeq, out=jle);
+    Or(a=jle, b=jgt, out=jumpCond);
+
+    // 再次確認當前執行的是 C 指令 (A 指令絕對不能觸發跳躍)
+    And(a=instruction[15], b=jumpCond, out=jump);
+
+    // PC 永遠預設為遞增 (inc=true)，除非 load 被觸發，或者收到外部 reset 歸零
+    PC(in=outA, load=jump, inc=true, reset=reset, out[0..14]=pc);
 }
