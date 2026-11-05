@@ -2,6 +2,6 @@
 
 
 
-![EDA 軟體報告](image.png)
+![HackCPU 電路圖](image.png)
 
 
