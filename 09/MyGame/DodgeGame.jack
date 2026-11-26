@@ -1,0 +1,80 @@
+class DodgeGame {
+    field Player player;
+    field Obstacle obs;
+    field int score;
+    field int seed;
+
+    constructor DodgeGame new() {
+        let player = Player.new(240, 225, 20);
+        let obs = Obstacle.new(100, 16, 4);
+        let score = 0;
+        let seed = 73;
+        return this;
+    }
+
+    method void dispose() {
+        do player.dispose();
+        do obs.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method int nextX() {
+        let seed = seed + 137;
+        if (seed > 480) {
+            let seed = seed - 480;
+        }
+        return seed + 10;
+    }
+
+    method boolean checkCollision() {
+        var int px, py, ps, ox, oy, os;
+        let px = player.getX();
+        let py = player.getY();
+        let ps = player.getSize();
+        let ox = obs.getX();
+        let oy = obs.getY();
+        let os = obs.getSize();
+
+        if ((px < (ox + os)) & ((px + ps) > ox) & (py < (oy + os)) & ((py + ps) > oy)) {
+            return true;
+        }
+        return false;
+    }
+
+    method void run() {
+        var char key;
+        var boolean exit;
+        var boolean hitBottom;
+        let exit = false;
+
+        do Output.moveCursor(0, 0);
+        do Output.printString("Score: ");
+        do Output.printInt(score);
+
+        while (~exit) {
+            let key = Keyboard.keyPressed();
+            if (key = 81) { let exit = true; }
+            if (key = 130) { do player.moveLeft(); }
+            if (key = 132) { do player.moveRight(); }
+
+            let hitBottom = obs.fall();
+            if (hitBottom) {
+                let score = score + 1;
+                do obs.reset(nextX());
+                do Output.moveCursor(0, 7);
+                do Output.printInt(score);
+            }
+
+            if (checkCollision()) {
+                let exit = true;
+            }
+
+            do Sys.wait(20);
+        }
+
+        do Output.moveCursor(11, 27);
+        do Output.printString("GAME OVER");
+        return;
+    }
+}
